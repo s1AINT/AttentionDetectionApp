@@ -4,7 +4,7 @@ using DlibDotNet;
 using System.Drawing.Imaging;
 using System.Drawing;
 using System.IO;
-
+using System.Collections.Generic;
 
 namespace AttentionDetectionApp.Services
 {
@@ -24,7 +24,6 @@ namespace AttentionDetectionApp.Services
             _faceDetector = Dlib.GetFrontalFaceDetector();
         }
 
-
         public FaceDetectionResult DetectFaceAndAttributes(byte[] frameData)
         {
             using (var img = ConvertByteArrayToImage(frameData))
@@ -35,11 +34,16 @@ namespace AttentionDetectionApp.Services
                     var face = faces[0];
                     var shape = _shapePredictor.Detect(img, face);
 
-                    var leftEyeOpenProbability = CalculateEyeOpenProbability(shape, 36, 41);
-                    var rightEyeOpenProbability = CalculateEyeOpenProbability(shape, 42, 47);
+                    // Викликаємо функцію для кожного ока
+                    var leftEyeOpenProbability = CalculateEyeOpenProbability(shape, 37, 41); // Ліве око
+                    var rightEyeOpenProbability = CalculateEyeOpenProbability(shape, 43, 47); // Праве око
+
                     var headRotationYaw = CalculateHeadYaw(shape);
                     var headRotationPitch = CalculateHeadPitch(shape);
                     var headRotationRoll = CalculateHeadRoll(shape);
+
+                    // Get all landmark points as a dictionary
+                    var landmarkPoints = GetFacialLandmarkPoints(shape);
 
                     return new FaceDetectionResult
                     {
@@ -48,7 +52,8 @@ namespace AttentionDetectionApp.Services
                         RightEyeOpenProbability = rightEyeOpenProbability,
                         HeadRotationAngleYaw = headRotationYaw,
                         HeadRotationAnglePitch = headRotationPitch,
-                        HeadRotationAngleRoll = headRotationRoll
+                        HeadRotationAngleRoll = headRotationRoll,
+                        LandmarkPoints = landmarkPoints
                     };
                 }
 
@@ -56,14 +61,26 @@ namespace AttentionDetectionApp.Services
             }
         }
 
+        private Dictionary<int, DlibDotNet.Point> GetFacialLandmarkPoints(FullObjectDetection shape)
+        {
+            var points = new Dictionary<int, DlibDotNet.Point>();
+
+            // Iterate through all 68 landmarks
+            for (int i = 0; i < shape.Parts; i++)
+            {
+                var point = shape.GetPart((uint)i);
+                points.Add(i, point);  // Add each point with its index
+            }
+
+            return points;
+        }
+
         private Array2D<RgbPixel> ConvertByteArrayToImage(byte[] frameData)
         {
             using (var ms = new MemoryStream(frameData))
             {
-                // Використовуємо System.Drawing для створення Bitmap
                 using (var bitmap = new Bitmap(ms))
                 {
-                    // Конвертуємо Bitmap в Array2D<RgbPixel>
                     return Dlib.LoadImageData<RgbPixel>(ConvertBitmapToByteArray(bitmap), (uint)bitmap.Height, (uint)bitmap.Width, (uint)(bitmap.Width * 3));
                 }
             }
@@ -82,15 +99,22 @@ namespace AttentionDetectionApp.Services
             return imageData;
         }
 
-        private double CalculateEyeOpenProbability(FullObjectDetection shape, int eyeStartIndex, int eyeEndIndex)
+        private double CalculateEyeOpenProbability(FullObjectDetection shape, int eyeTopIndex, int eyeBottomIndex)
         {
-            // Розрахунок відкритості ока на основі відстаней між контрольними точками ока
-            double eyeOpenDistance = CalculateEuclideanDistance(shape.GetPart((uint)eyeStartIndex), shape.GetPart((uint)eyeEndIndex));
-            double eyeWidth = CalculateEuclideanDistance(shape.GetPart((uint)(eyeStartIndex + 1)), shape.GetPart((uint)(eyeStartIndex + 5)));
+            // Отримуємо точки ока
+            var topPoint = shape.GetPart((uint)eyeTopIndex); // Верхня точка ока
+            var bottomPoint = shape.GetPart((uint)eyeBottomIndex); // Нижня точка ока
 
-            double ratio = eyeOpenDistance / eyeWidth;
-            return ratio > 0.25 ? 1.0 : ratio; // 1.0 означає відкриті очі
+            // Вимірюємо вертикальну відстань
+            double eyeHeight = CalculateEuclideanDistance(topPoint, bottomPoint);
+
+            // Налаштуй поріг, щоб визначити, чи очі відкриті
+            double threshold = 10.0; // Можливо, потрібно налаштувати залежно від даних
+            return eyeHeight < threshold ? 0.0 : 1.0; // 0.0 - закриті, 1.0 - відкриті
         }
+
+
+
 
         private double CalculateHeadYaw(FullObjectDetection shape)
         {
@@ -121,7 +145,7 @@ namespace AttentionDetectionApp.Services
             return System.Math.Atan2(dy, dx) * (180.0 / System.Math.PI);
         }
 
-        private double CalculateEuclideanDistance(DlibDotNet.Point p1, DlibDotNet.Point p2)  // Вказуємо DlibDotNet.Point
+        private double CalculateEuclideanDistance(DlibDotNet.Point p1, DlibDotNet.Point p2)
         {
             return System.Math.Sqrt((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y));
         }

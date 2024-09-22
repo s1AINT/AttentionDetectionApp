@@ -1,5 +1,8 @@
 ﻿
 
+
+using DlibDotNet;
+
 namespace AttentionDetectionApp.Models
 {
     public class FaceDetectionResult
@@ -7,8 +10,9 @@ namespace AttentionDetectionApp.Models
         public bool IsFaceDetected { get; set; }
         public double LeftEyeOpenProbability { get; set; }
         public double RightEyeOpenProbability { get; set; }
-        public double HeadRotationAngleYaw { get; set; }  // Кут повороту голови (вліво/вправо)
-        public double HeadRotationAnglePitch { get; set; } // Кут нахилу голови (вверх/вниз)
-        public double HeadRotationAngleRoll { get; set; } // Кут нахилу голови вбік (ліво/право)
+        public double HeadRotationAngleYaw { get; set; }
+        public double HeadRotationAnglePitch { get; set; }
+        public double HeadRotationAngleRoll { get; set; }
+        public Dictionary<int, Point> LandmarkPoints { get; set; } 
     }
 }

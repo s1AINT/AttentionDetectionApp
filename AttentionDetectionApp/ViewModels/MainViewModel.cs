@@ -11,6 +11,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
@@ -31,71 +32,100 @@ namespace AttentionDetectionApp.ViewModels
 
         public MainViewModel(IFrameProcessingService frameProcessingService = null, IAttentionAnalysisService attentionAnalysisService = null)
         {
-            // Ініціалізуємо об'єкт для захоплення кадрів з камери
             _cameraCapture = new CameraCapture();
-            _cameraCapture.StartCapture();  // Запускаємо захоплення кадрів
+            _cameraCapture.StartCapture();
 
-            // Створюємо таймер для захоплення кадрів
             _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromMilliseconds(100);  // Оновлюємо кадри кожні 100 мс
+            _timer.Interval = TimeSpan.FromMilliseconds(100);
             _timer.Tick += async (s, e) => await CaptureFrameAsync();
 
-            // Обчислюємо частоту кадрів (fps) на основі інтервалу таймера
             int frameRate = CalculateFrameRate(_timer.Interval);
 
-            if (frameProcessingService == null)
-                _frameProcessingService = new FrameProcessingService(new FaceDetectionService(), frameRate);
-            else
-                _frameProcessingService = frameProcessingService;
-
-            if (attentionAnalysisService == null)
-                _attentionAnalysisService = new AttentionAnalysisService();
-            else
-                _attentionAnalysisService = attentionAnalysisService;
+            _frameProcessingService = frameProcessingService ?? new FrameProcessingService(new FaceDetectionService(), frameRate);
+            _attentionAnalysisService = attentionAnalysisService ?? new AttentionAnalysisService();
 
             FaceDetectionResults = new ObservableCollection<FaceDetectionResult>();
             SubBlockStatuses = new ObservableCollection<SubBlockStatus>();
 
-            // Підписуємося на подію обробки кадру
             _frameProcessingService.FrameProcessed += OnFrameProcessed;
-
             _timer.Start();
         }
 
-        // Метод для обчислення кількості кадрів в секунду (fps)
         private int CalculateFrameRate(TimeSpan interval)
         {
-            // fps = 1000 / інтервал в мілісекундах
             return (int)(1000 / interval.TotalMilliseconds);
         }
 
-        // Команда для захоплення кадру вручну
         public ICommand CaptureFrameCommand => new RelayCommand(async () => await CaptureFrameAsync());
 
         private async Task CaptureFrameAsync()
         {
-            // Захоплюємо кадр
             byte[] frameData = _cameraCapture.CaptureFrame();
             _frameProcessingService.ProcessFrame(frameData);
         }
 
         private void OnFrameProcessed(byte[] frameData, FaceDetectionResult result)
         {
-            // Оновлюємо поточний кадр
-            CurrentFrame = ConvertByteArrayToBitmapImage(frameData);
+            var bitmapImage = ConvertByteArrayToBitmapImage(frameData);
 
-            // Додаємо результат в колекцію
+            var annotatedFrame = DrawFacialLandmarks(bitmapImage, result);
+
+            CurrentFrame = annotatedFrame;
+
             FaceDetectionResults.Add(result);
 
-            // Аналізуємо статус підблоку
-            var subBlockStatus = _attentionAnalysisService.AnalyzeSubBlock(FaceDetectionResults.Select(f => _frameProcessingService.DetermineFrameSubStatus(f)).ToList());
+            var lastResults = FaceDetectionResults.TakeLast(10).ToList();
+
+            var subBlockStatus = _attentionAnalysisService.AnalyzeSubBlock(lastResults.Select(f => _frameProcessingService.DetermineFrameSubStatus(f)).ToList());
             SubBlockStatuses.Add(subBlockStatus);
 
-            if (SubBlockStatuses.Count >= 5)  // Припустимо, що 5 підблоків достатньо для аналізу блоку
+            if (SubBlockStatuses.Count >= 5)
             {
-                // Аналізуємо статус блоку
                 _currentBlockStatus = _attentionAnalysisService.AnalyzeBlock(SubBlockStatuses.ToList());
                 SubBlockStatuses.Clear();
+            }
+        }
+
+
+        // Method to draw facial landmarks on the frame
+        private WriteableBitmap DrawFacialLandmarks(BitmapImage image, FaceDetectionResult result)
+        {
+            var writeableBitmap = new WriteableBitmap(image);
+
+            if (result.IsFaceDetected && result.LandmarkPoints != null)
+            {
+                using (var context = writeableBitmap.GetBitmapContext())
+                {
+                    foreach (var point in result.LandmarkPoints.Values)
+                    {
+                        // Draw each point as a small circle on the frame
+                        DrawPoint(writeableBitmap, point.X, point.Y, Colors.Red, 3);
+                    }
+                }
+            }
+
+            return writeableBitmap;
+        }
+
+        // Helper method to draw a circle representing a landmark
+        private void DrawPoint(WriteableBitmap bitmap, int x, int y, Color color, int radius)
+        {
+            int startX = Math.Max(0, x - radius);
+            int endX = Math.Min(bitmap.PixelWidth - 1, x + radius);
+            int startY = Math.Max(0, y - radius);
+            int endY = Math.Min(bitmap.PixelHeight - 1, y + radius);
+
+            for (int i = startX; i <= endX; i++)
+            {
+                for (int j = startY; j <= endY; j++)
+                {
+                    // Calculate distance to center point
+                    double distance = Math.Sqrt((i - x) * (i - x) + (j - y) * (j - y));
+                    if (distance <= radius)
+                    {
+                        bitmap.SetPixel(i, j, color);
+                    }
+                }
             }
         }
 
