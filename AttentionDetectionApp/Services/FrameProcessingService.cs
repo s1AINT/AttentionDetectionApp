@@ -9,22 +9,22 @@ namespace AttentionDetectionApp.Services
         private readonly IFaceDetectionService _faceDetectionService;
         private readonly List<FaceDetectionResult> _frameBlock;
         private readonly List<FrameSubStatus> _frameSubStatuses;
-        private readonly List<SubBlockStatus> _subBlockStatuses;
+        private readonly List<SubBlock> _subBlocks;
         private int _framesPerSubBlock;
-        private const int SubBlocksPerBlock = 5;  // 5 підблоків на блок
+        private const int SubBlocksPerBlock = 5;  
 
-        private int _currentFrameCount = 0;  // Лічильник кадрів
-        private int _currentSubBlockIndex = 0;  // Лічильник підблоків
+        private int _currentFrameCount = 0; 
+        private int _currentSubBlockIndex = 0; 
 
-        public event Action<byte[], FaceDetectionResult> FrameProcessed;  // Подія для обробленого кадру
+        public event Action<byte[], FaceDetectionResult> FrameProcessed;
 
         public FrameProcessingService(IFaceDetectionService faceDetectionService, int framesPerSecond)
         {
             _faceDetectionService = faceDetectionService;
-            _framesPerSubBlock = framesPerSecond;  // Кількість кадрів у підблоці визначається частотою кадрів
+            _framesPerSubBlock = framesPerSecond; 
             _frameBlock = new List<FaceDetectionResult>(_framesPerSubBlock);
             _frameSubStatuses = new List<FrameSubStatus>(_framesPerSubBlock);
-            _subBlockStatuses = new List<SubBlockStatus>(SubBlocksPerBlock);
+            _subBlocks = new List<SubBlock>(SubBlocksPerBlock);
         }
 
         public void ProcessFrame(byte[] frameData)
@@ -39,19 +39,21 @@ namespace AttentionDetectionApp.Services
 
             if (_frameSubStatuses.Count >= _framesPerSubBlock)
             {
-                // Аналізуємо підблок
                 AttentionAnalysisService analysisService = new AttentionAnalysisService();
                 var subBlockStatus = analysisService.AnalyzeSubBlock(_frameSubStatuses);
-                _subBlockStatuses.Add(subBlockStatus);
+
+                SubBlock subBlock = new SubBlock(new List<FrameSubStatus>(_frameSubStatuses), subBlockStatus);
+                _subBlocks.Add(subBlock);
 
                 _currentSubBlockIndex++;
                 _frameSubStatuses.Clear();
 
                 if (_currentSubBlockIndex >= SubBlocksPerBlock)
                 {
-                    // Аналізуємо блок
-                    var blockStatus = analysisService.AnalyzeBlock(_subBlockStatuses);
-                    _subBlockStatuses.Clear();
+                    var blockStatus = analysisService.AnalyzeBlock(_subBlocks);
+
+                    Block block = new Block(new List<SubBlock>(_subBlocks), blockStatus);
+                    _subBlocks.Clear();
                     _currentSubBlockIndex = 0;
                 }
             }
@@ -73,7 +75,7 @@ namespace AttentionDetectionApp.Services
                 return FrameSubStatus.HeadTurnedLeft;
             }
 
-            return FrameSubStatus.OpenEyes;  // Голова прямо і очі відкриті
+            return FrameSubStatus.OpenEyes;
         }
     }
 }

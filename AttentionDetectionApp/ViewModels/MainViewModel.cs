@@ -1,5 +1,4 @@
 ﻿using AttentionDetectionApp.Models;
-using AttentionDetectionApp.Models.Statuses;
 using AttentionDetectionApp.Services;
 using AttentionDetectionApp.Services.Interfaces;
 using AttentionDetectionApp.Utils;
@@ -22,16 +21,20 @@ namespace AttentionDetectionApp.ViewModels
         private readonly IFrameProcessingService _frameProcessingService;
         private readonly IAttentionAnalysisService _attentionAnalysisService;
         private ObservableCollection<FaceDetectionResult> _faceDetectionResults;
-        private ObservableCollection<SubBlockStatus> _subBlockStatuses;
-        private BlockStatus _currentBlockStatus;
+        private ObservableCollection<FaceDetectionResult> _currentSubBlockFrames;
+        private ObservableCollection<SubBlock> _subBlocks; 
+        private Block _currentBlock; 
         private BitmapSource _currentFrame;
         private CameraCapture _cameraCapture;
         private DispatcherTimer _timer;
+        private int frameRate;
+        private int blockSize;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public MainViewModel(IFrameProcessingService frameProcessingService = null, IAttentionAnalysisService attentionAnalysisService = null)
         {
+            blockSize = 5;
             _cameraCapture = new CameraCapture();
             _cameraCapture.StartCapture();
 
@@ -39,13 +42,14 @@ namespace AttentionDetectionApp.ViewModels
             _timer.Interval = TimeSpan.FromMilliseconds(100);
             _timer.Tick += async (s, e) => await CaptureFrameAsync();
 
-            int frameRate = CalculateFrameRate(_timer.Interval);
+            frameRate = CalculateFrameRate(_timer.Interval);
 
             _frameProcessingService = frameProcessingService ?? new FrameProcessingService(new FaceDetectionService(), frameRate);
             _attentionAnalysisService = attentionAnalysisService ?? new AttentionAnalysisService();
 
             FaceDetectionResults = new ObservableCollection<FaceDetectionResult>();
-            SubBlockStatuses = new ObservableCollection<SubBlockStatus>();
+            _currentSubBlockFrames = new ObservableCollection<FaceDetectionResult>();
+            SubBlocks = new ObservableCollection<SubBlock>(); 
 
             _frameProcessingService.FrameProcessed += OnFrameProcessed;
             _timer.Start();
@@ -72,22 +76,32 @@ namespace AttentionDetectionApp.ViewModels
 
             CurrentFrame = annotatedFrame;
 
-            FaceDetectionResults.Add(result);
+            _currentSubBlockFrames.Add(result);
 
-            var lastResults = FaceDetectionResults.TakeLast(10).ToList();
-
-            var subBlockStatus = _attentionAnalysisService.AnalyzeSubBlock(lastResults.Select(f => _frameProcessingService.DetermineFrameSubStatus(f)).ToList());
-            SubBlockStatuses.Add(subBlockStatus);
-
-            if (SubBlockStatuses.Count >= 5)
+            if (_currentSubBlockFrames.Count >= frameRate)
             {
-                _currentBlockStatus = _attentionAnalysisService.AnalyzeBlock(SubBlockStatuses.ToList());
-                SubBlockStatuses.Clear();
+                var subBlock = new SubBlock(
+                    _currentSubBlockFrames.Select(f => _frameProcessingService.DetermineFrameSubStatus(f)).ToList(),
+                    _attentionAnalysisService.AnalyzeSubBlock(_currentSubBlockFrames.Select(f => _frameProcessingService.DetermineFrameSubStatus(f)).ToList())
+                );
+
+                SubBlocks.Add(subBlock);
+
+                _currentSubBlockFrames.Clear();
+            }
+
+            if (SubBlocks.Count >= blockSize)
+            {
+                CurrentBlock = new Block(
+                    SubBlocks.ToList(),
+                    _attentionAnalysisService.AnalyzeBlock(SubBlocks.ToList())
+                );
+
+                SubBlocks.Clear();
             }
         }
 
 
-        // Method to draw facial landmarks on the frame
         private WriteableBitmap DrawFacialLandmarks(BitmapImage image, FaceDetectionResult result)
         {
             var writeableBitmap = new WriteableBitmap(image);
@@ -98,7 +112,6 @@ namespace AttentionDetectionApp.ViewModels
                 {
                     foreach (var point in result.LandmarkPoints.Values)
                     {
-                        // Draw each point as a small circle on the frame
                         DrawPoint(writeableBitmap, point.X, point.Y, Colors.Red, 3);
                     }
                 }
@@ -107,7 +120,6 @@ namespace AttentionDetectionApp.ViewModels
             return writeableBitmap;
         }
 
-        // Helper method to draw a circle representing a landmark
         private void DrawPoint(WriteableBitmap bitmap, int x, int y, Color color, int radius)
         {
             int startX = Math.Max(0, x - radius);
@@ -119,7 +131,6 @@ namespace AttentionDetectionApp.ViewModels
             {
                 for (int j = startY; j <= endY; j++)
                 {
-                    // Calculate distance to center point
                     double distance = Math.Sqrt((i - x) * (i - x) + (j - y) * (j - y));
                     if (distance <= radius)
                     {
@@ -139,22 +150,22 @@ namespace AttentionDetectionApp.ViewModels
             }
         }
 
-        public ObservableCollection<SubBlockStatus> SubBlockStatuses
+        public ObservableCollection<SubBlock> SubBlocks 
         {
-            get => _subBlockStatuses;
+            get => _subBlocks;
             set
             {
-                _subBlockStatuses = value;
+                _subBlocks = value;
                 OnPropertyChanged();
             }
         }
 
-        public BlockStatus CurrentBlockStatus
+        public Block CurrentBlock
         {
-            get => _currentBlockStatus;
+            get => _currentBlock;
             set
             {
-                _currentBlockStatus = value;
+                _currentBlock = value;
                 OnPropertyChanged();
             }
         }

@@ -6,7 +6,7 @@ namespace AttentionDetectionApp.Services.Interfaces
 {
     public interface IAttentionAnalysisService
     {
-        BlockStatus AnalyzeBlock(List<SubBlockStatus> subBlockHistory);
+        public BlockStatus AnalyzeBlock(List<SubBlock> subBlocks);
         SubBlockStatus AnalyzeSubBlock(List<FrameSubStatus> frameSubStatuses);
     }
 }

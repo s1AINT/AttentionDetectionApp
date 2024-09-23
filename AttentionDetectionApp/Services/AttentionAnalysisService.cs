@@ -6,23 +6,27 @@ namespace AttentionDetectionApp.Services
 {
     public class AttentionAnalysisService : IAttentionAnalysisService
     {
-        private const int MinSubBlocksForBlockAnalysis = 5; // 5 підблоків для аналізу блоку
+        private const int MinSubBlocksForBlockAnalysis = 5;
 
-        public BlockStatus AnalyzeBlock(List<SubBlockStatus> subBlockHistory)
+        public BlockStatus AnalyzeBlock(List<SubBlock> subBlocks)
         {
-            if (subBlockHistory.Count < MinSubBlocksForBlockAnalysis)
+            if (subBlocks.Count < MinSubBlocksForBlockAnalysis)
             {
-                return BlockStatus.LostAttention;  // Недостатньо підблоків для аналізу
+                return BlockStatus.LostAttention; 
             }
 
-            // Аналізуємо підблоки для визначення статусу блоку
+            List<SubBlockStatus> subBlockStatuses = new List<SubBlockStatus>();
+            foreach (var subBlock in subBlocks)
+            {
+                subBlockStatuses.Add(subBlock.Status);
+            }
+
             AttentionPattern pattern = new AttentionPattern();
-            return pattern.DetermineBlockStatus(subBlockHistory);
+            return pattern.DetermineBlockStatus(subBlockStatuses);
         }
 
         public SubBlockStatus AnalyzeSubBlock(List<FrameSubStatus> frameSubStatuses)
         {
-            // Логіка визначення статусу підблоку на основі кадрів
             if (frameSubStatuses.TrueForAll(status => status == FrameSubStatus.ClosedEyes))
             {
                 return SubBlockStatus.Sleeping;

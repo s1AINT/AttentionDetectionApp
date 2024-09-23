@@ -8,7 +8,6 @@ namespace AttentionDetectionApp.Models
     {
         public BlockStatus DetermineBlockStatus(List<SubBlockStatus> subBlockStatuses)
         {
-            // Логіка визначення статусу на основі підблоків
             if (subBlockStatuses.TrueForAll(status => status == SubBlockStatus.Sleeping))
             {
                 return BlockStatus.Sleepy;

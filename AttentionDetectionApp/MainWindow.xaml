@@ -22,11 +22,11 @@
 
         <!-- Секція для статусів підблоків -->
         <GroupBox Header="SubBlock Statuses" HorizontalAlignment="Stretch" VerticalAlignment="Top" Width="250" Height="300" Margin="10,10,0,0" Grid.Column="1" Grid.Row="0">
-            <ListBox ItemsSource="{Binding SubBlockStatuses}">
+            <ListBox ItemsSource="{Binding SubBlocks}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel>
-                            <TextBlock Text="{Binding}" FontWeight="Bold" Foreground="Purple"/>
+                            <TextBlock Text="{Binding Status}" FontWeight="Bold" Foreground="Purple"/>
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -70,7 +70,7 @@
 
         <!-- Секція для статусу поточного блоку -->
         <GroupBox Header="Block Status" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="250" Height="100" Margin="10,0,0,10" Grid.Column="1" Grid.Row="1">
-            <TextBlock Text="{Binding CurrentBlockStatus}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding CurrentBlock.Status}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </GroupBox>
     </Grid>
 </Window>
