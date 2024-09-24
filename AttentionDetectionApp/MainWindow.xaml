@@ -25,10 +25,11 @@
             SelectedItem="{Binding CameraSelectionViewModel.SelectedCamera}"
             Width="200" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-        <Image Source="{Binding CurrentFrame}"  Width="640" Height="360" Margin="0,10,0,0" Grid.Column="0" Grid.Row="1"/>
+        <Image Source="{Binding FrameProcessingViewModel.CurrentFrame}"  
+               Width="640" Height="360" Margin="0,10,0,0" Grid.Column="0" Grid.Row="1"/>
 
         <GroupBox Header="SubBlock Statuses" HorizontalAlignment="Stretch" VerticalAlignment="Top" Width="250" Height="300" Margin="10,10,0,0" Grid.Column="1" Grid.Row="1">
-            <ListBox ItemsSource="{Binding SubBlocks}">
+            <ListBox ItemsSource="{Binding FrameProcessingViewModel.SubBlocks}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel>
@@ -49,7 +50,7 @@
                 <TextBlock Text="Roll" FontWeight="Bold" Foreground="DarkGreen"/>
             </StackPanel>
 
-            <ListBox ItemsSource="{Binding FaceDetectionResults}" HorizontalAlignment="Left" Height="200">
+            <ListBox ItemsSource="{Binding FrameProcessingViewModel.FaceDetectionResults}" HorizontalAlignment="Left" Height="200">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Vertical"/>
@@ -71,7 +72,7 @@
         </StackPanel>
 
         <GroupBox Header="Block Status" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="250" Height="100" Margin="10,0,0,10" Grid.Column="1" Grid.Row="2">
-            <TextBlock Text="{Binding CurrentBlock.Status}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding FrameProcessingViewModel.CurrentBlock.Status}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </GroupBox>
 
         <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2">

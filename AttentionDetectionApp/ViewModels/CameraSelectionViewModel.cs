@@ -7,13 +7,11 @@ using System.Windows;
 
 namespace AttentionDetectionApp.ViewModels
 {
-    public class CameraSelectionViewModel : INotifyPropertyChanged
+    public class CameraSelectionViewModel : BaseViewModel
     {
         private CameraCapture _cameraCapture;
         private string _selectedCamera;
         private ObservableCollection<string> _availableCameras;
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         public CameraSelectionViewModel()
         {
@@ -95,11 +93,6 @@ namespace AttentionDetectionApp.ViewModels
             {
                 SelectedCamera = AvailableCameras.FirstOrDefault();
             }
-        }
-
-        protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
