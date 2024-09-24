@@ -71,7 +71,7 @@
             </ListBox>
         </StackPanel>
 
-        <GroupBox Header="Block Status" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="250" Height="100" Margin="10,0,0,10" Grid.Column="1" Grid.Row="2">
+        <GroupBox Header="Block Status" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10,0,0,10" Grid.Column="1" Grid.Row="2">
             <TextBlock Text="{Binding FrameProcessingViewModel.CurrentBlock.Status}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </GroupBox>
 

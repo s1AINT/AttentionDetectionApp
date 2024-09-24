@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Reactive;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -14,14 +15,16 @@ namespace AttentionDetectionApp.ViewModels
         private FrameProcessingViewModel _frameProcessingViewModel;
         private bool _isCapturing;
         private DispatcherTimer _timer;
+        int _timerInterval;
 
         public MainViewModel(IFrameProcessingService frameProcessingService = null, IAttentionAnalysisService attentionAnalysisService = null)
         {
+            _timerInterval = 100;
             _cameraSelectionViewModel = new CameraSelectionViewModel();
-            _frameProcessingViewModel = new FrameProcessingViewModel(frameProcessingService, attentionAnalysisService, CalculateFrameRate(TimeSpan.FromMilliseconds(50)), 5);
+            _frameProcessingViewModel = new FrameProcessingViewModel(frameProcessingService, attentionAnalysisService, CalculateFrameRate(TimeSpan.FromMilliseconds(_timerInterval)), 5);
 
             _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromMilliseconds(50);
+            _timer.Interval = TimeSpan.FromMilliseconds(_timerInterval);
             _timer.Tick += async (s, e) => await CaptureFrameAsync();
 
             IsCapturing = false;
@@ -77,7 +80,5 @@ namespace AttentionDetectionApp.ViewModels
         {
             return (int)(1000 / interval.TotalMilliseconds);
         }
-
-        
     }
 }

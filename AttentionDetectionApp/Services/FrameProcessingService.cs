@@ -1,60 +1,77 @@
 ﻿using AttentionDetectionApp.Models;
 using AttentionDetectionApp.Models.Statuses;
 using AttentionDetectionApp.Services.Interfaces;
+using System.Threading.Tasks;
 
 namespace AttentionDetectionApp.Services
 {
     public class FrameProcessingService : IFrameProcessingService
     {
         private readonly IFaceDetectionService _faceDetectionService;
-        private readonly List<FaceDetectionResult> _frameBlock;
         private readonly List<FrameSubStatus> _frameSubStatuses;
         private readonly List<SubBlock> _subBlocks;
         private int _framesPerSubBlock;
-        private const int SubBlocksPerBlock = 5;  
+        private const int SubBlocksPerBlock = 5;
 
-        private int _currentFrameCount = 0; 
-        private int _currentSubBlockIndex = 0; 
+        private int _currentFrameCount = 0;
+        private int _currentSubBlockIndex = 0;
 
         public event Action<byte[], FaceDetectionResult> FrameProcessed;
 
         public FrameProcessingService(IFaceDetectionService faceDetectionService, int framesPerSecond)
         {
             _faceDetectionService = faceDetectionService;
-            _framesPerSubBlock = framesPerSecond; 
-            _frameBlock = new List<FaceDetectionResult>(_framesPerSubBlock);
+            _framesPerSubBlock = framesPerSecond;
             _frameSubStatuses = new List<FrameSubStatus>(_framesPerSubBlock);
             _subBlocks = new List<SubBlock>(SubBlocksPerBlock);
+        }
+
+        public async Task ProcessFramesAsync(List<byte[]> frameDataList)
+        {
+            // Використовуємо Parallel.ForEach для паралельної обробки кадрів
+            await Task.Run(() =>
+            {
+                Parallel.ForEach(frameDataList, frameData =>
+                {
+                    ProcessFrame(frameData);
+                });
+            });
         }
 
         public void ProcessFrame(byte[] frameData)
         {
             var faceDetectionResult = _faceDetectionService.DetectFaceAndAttributes(frameData);
             var frameSubStatus = DetermineFrameSubStatus(faceDetectionResult);
-            _frameSubStatuses.Add(frameSubStatus);
+            lock (_frameSubStatuses)
+            {
+                _frameSubStatuses.Add(frameSubStatus);
+            }
 
             FrameProcessed?.Invoke(frameData, faceDetectionResult);
 
-            _currentFrameCount++;
-
-            if (_frameSubStatuses.Count >= _framesPerSubBlock)
+            lock (_frameSubStatuses)
             {
-                AttentionAnalysisService analysisService = new AttentionAnalysisService();
-                var subBlockStatus = analysisService.AnalyzeSubBlock(_frameSubStatuses);
+                _currentFrameCount++;
 
-                SubBlock subBlock = new SubBlock(new List<FrameSubStatus>(_frameSubStatuses), subBlockStatus);
-                _subBlocks.Add(subBlock);
-
-                _currentSubBlockIndex++;
-                _frameSubStatuses.Clear();
-
-                if (_currentSubBlockIndex >= SubBlocksPerBlock)
+                if (_frameSubStatuses.Count >= _framesPerSubBlock)
                 {
-                    var blockStatus = analysisService.AnalyzeBlock(_subBlocks);
+                    AttentionAnalysisService analysisService = new AttentionAnalysisService();
+                    var subBlockStatus = analysisService.AnalyzeSubBlock(_frameSubStatuses);
 
-                    Block block = new Block(new List<SubBlock>(_subBlocks), blockStatus);
-                    _subBlocks.Clear();
-                    _currentSubBlockIndex = 0;
+                    SubBlock subBlock = new SubBlock(new List<FrameSubStatus>(_frameSubStatuses), subBlockStatus);
+                    _subBlocks.Add(subBlock);
+
+                    _currentSubBlockIndex++;
+                    _frameSubStatuses.Clear();
+
+                    if (_currentSubBlockIndex >= SubBlocksPerBlock)
+                    {
+                        var blockStatus = analysisService.AnalyzeBlock(_subBlocks);
+
+                        Block block = new Block(new List<SubBlock>(_subBlocks), blockStatus);
+                        _subBlocks.Clear();
+                        _currentSubBlockIndex = 0;
+                    }
                 }
             }
         }

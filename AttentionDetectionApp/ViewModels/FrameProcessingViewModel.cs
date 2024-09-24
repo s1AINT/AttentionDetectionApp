@@ -12,7 +12,7 @@ namespace AttentionDetectionApp.ViewModels
     {
         private readonly IFrameProcessingService _frameProcessingService;
         private readonly IAttentionAnalysisService _attentionAnalysisService;
-        private ObservableCollection<FaceDetectionResult> _faceDetectionResults;
+
         private ObservableCollection<FaceDetectionResult> _currentSubBlockFrames;
         private ObservableCollection<SubBlock> _subBlocks;
         private Block _currentBlock;
@@ -37,8 +37,8 @@ namespace AttentionDetectionApp.ViewModels
 
         public ObservableCollection<FaceDetectionResult> FaceDetectionResults
         {
-            get => _faceDetectionResults;
-            set => SetProperty(ref _faceDetectionResults, value);
+            get => _currentSubBlockFrames;
+            set => SetProperty(ref _currentSubBlockFrames, value);
         }
 
         public ObservableCollection<SubBlock> SubBlocks
