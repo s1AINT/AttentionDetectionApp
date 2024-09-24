@@ -9,18 +9,12 @@ namespace AttentionDetectionApp.Utils
     public class CameraCapture
     {
         private VideoCaptureDevice _videoSource;
-        public int FrameRate { get; private set; }  // Частота кадрів камери
+        public int FrameRate { get; private set; } 
 
-        public CameraCapture()
+        public CameraCapture(string cameraMonikerString)
         {
-            // Ініціалізація джерела відео (камера)
-            var videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
-            if (videoDevices.Count == 0)
-                throw new Exception("Камера не знайдена");
+            _videoSource = new VideoCaptureDevice(cameraMonikerString);
 
-            _videoSource = new VideoCaptureDevice(videoDevices[0].MonikerString);
-
-            // Визначаємо частоту кадрів
             FrameRate = _videoSource.VideoCapabilities[0].AverageFrameRate;
             _videoSource.NewFrame += new NewFrameEventHandler(Video_NewFrame);
         }
@@ -40,7 +34,6 @@ namespace AttentionDetectionApp.Utils
 
         private void Video_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
-            // Копіюємо поточний кадр на кожному новому фреймі
             _currentFrame = (Bitmap)eventArgs.Frame.Clone();
         }
 
@@ -51,11 +44,17 @@ namespace AttentionDetectionApp.Utils
                 using (MemoryStream ms = new MemoryStream())
                 {
                     _currentFrame.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
-                    return ms.ToArray(); // Повертає кадр у вигляді масиву байтів
+                    return ms.ToArray(); 
                 }
             }
 
             return null;
+        }
+
+        public static List<string> GetAvailableCameras()
+        {
+            var videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+            return videoDevices.Cast<FilterInfo>().Select(d => d.MonikerString).ToList();
         }
     }
 }

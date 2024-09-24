@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AttentionDetectionApp"
         mc:Ignorable="d"
-        Title="Attention Detection App" Height="600" Width="900">
+        Title="Attention Detection App" Height="650" Width="900">
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -13,15 +13,21 @@
             <ColumnDefinition Width="200" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"  />
-            <RowDefinition Height ="200"/>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="200" />
+            <RowDefinition Height="50" />
         </Grid.RowDefinitions>
 
-        <!-- Секція для відео з камери -->
-        <Image Source="{Binding CurrentFrame}"  Width="640" Height="360" Margin="0,10,0,0" Grid.Column="0" Grid.Row="0"/>
+        <ComboBox 
+            Grid.Row="0" Grid.Column="0"
+            ItemsSource="{Binding CameraSelectionViewModel.AvailableCameras}" 
+            SelectedItem="{Binding CameraSelectionViewModel.SelectedCamera}"
+            Width="200" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-        <!-- Секція для статусів підблоків -->
-        <GroupBox Header="SubBlock Statuses" HorizontalAlignment="Stretch" VerticalAlignment="Top" Width="250" Height="300" Margin="10,10,0,0" Grid.Column="1" Grid.Row="0">
+        <Image Source="{Binding CurrentFrame}"  Width="640" Height="360" Margin="0,10,0,0" Grid.Column="0" Grid.Row="1"/>
+
+        <GroupBox Header="SubBlock Statuses" HorizontalAlignment="Stretch" VerticalAlignment="Top" Width="250" Height="300" Margin="10,10,0,0" Grid.Column="1" Grid.Row="1">
             <ListBox ItemsSource="{Binding SubBlocks}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -33,9 +39,7 @@
             </ListBox>
         </GroupBox>
 
-        <!-- Секція для результатів детекції облич -->
-        <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="1" Margin="0,0,0,0">
-            <!-- Заголовки -->
+        <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="2" Margin="0,0,0,0">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Face Detected" FontWeight="Bold" Foreground="DarkBlue" Margin="0,0,10,0"/>
                 <TextBlock Text="Left Eye Open" FontWeight="Bold" Foreground="DarkGreen" Margin="0,0,10,0"/>
@@ -45,7 +49,6 @@
                 <TextBlock Text="Roll" FontWeight="Bold" Foreground="DarkGreen"/>
             </StackPanel>
 
-            <!-- Секція для результатів детекції облич -->
             <ListBox ItemsSource="{Binding FaceDetectionResults}" HorizontalAlignment="Left" Height="200">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -65,12 +68,16 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-
         </StackPanel>
 
-        <!-- Секція для статусу поточного блоку -->
-        <GroupBox Header="Block Status" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="250" Height="100" Margin="10,0,0,10" Grid.Column="1" Grid.Row="1">
+        <GroupBox Header="Block Status" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="250" Height="100" Margin="10,0,0,10" Grid.Column="1" Grid.Row="2">
             <TextBlock Text="{Binding CurrentBlock.Status}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </GroupBox>
+
+        <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2">
+            <Button Content="Start" Width="100" Height="30" Margin="5" Command="{Binding StartCaptureCommand}"/>
+            <Button Content="Stop" Width="100" Height="30" Margin="5" Command="{Binding StopCaptureCommand}"/>
+        </StackPanel>
+
     </Grid>
 </Window>

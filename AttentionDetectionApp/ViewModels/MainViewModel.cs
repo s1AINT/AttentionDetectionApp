@@ -1,4 +1,5 @@
-﻿using AttentionDetectionApp.Models;
+﻿using AForge.Video.DirectShow;
+using AttentionDetectionApp.Models;
 using AttentionDetectionApp.Services;
 using AttentionDetectionApp.Services.Interfaces;
 using AttentionDetectionApp.Utils;
@@ -18,28 +19,28 @@ namespace AttentionDetectionApp.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
+        private CameraSelectionViewModel _cameraSelectionViewModel;
         private readonly IFrameProcessingService _frameProcessingService;
         private readonly IAttentionAnalysisService _attentionAnalysisService;
         private ObservableCollection<FaceDetectionResult> _faceDetectionResults;
         private ObservableCollection<FaceDetectionResult> _currentSubBlockFrames;
-        private ObservableCollection<SubBlock> _subBlocks; 
-        private Block _currentBlock; 
+        private ObservableCollection<SubBlock> _subBlocks;
+        private Block _currentBlock;
         private BitmapSource _currentFrame;
-        private CameraCapture _cameraCapture;
         private DispatcherTimer _timer;
         private int frameRate;
         private int blockSize;
+        private bool _isCapturing;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public MainViewModel(IFrameProcessingService frameProcessingService = null, IAttentionAnalysisService attentionAnalysisService = null)
         {
+            _cameraSelectionViewModel = new CameraSelectionViewModel();
             blockSize = 5;
-            _cameraCapture = new CameraCapture();
-            _cameraCapture.StartCapture();
 
             _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromMilliseconds(100);
+            _timer.Interval = TimeSpan.FromMilliseconds(50);
             _timer.Tick += async (s, e) => await CaptureFrameAsync();
 
             frameRate = CalculateFrameRate(_timer.Interval);
@@ -49,31 +50,63 @@ namespace AttentionDetectionApp.ViewModels
 
             FaceDetectionResults = new ObservableCollection<FaceDetectionResult>();
             _currentSubBlockFrames = new ObservableCollection<FaceDetectionResult>();
-            SubBlocks = new ObservableCollection<SubBlock>(); 
+            SubBlocks = new ObservableCollection<SubBlock>();
 
             _frameProcessingService.FrameProcessed += OnFrameProcessed;
-            _timer.Start();
         }
 
-        private int CalculateFrameRate(TimeSpan interval)
+        public CameraSelectionViewModel CameraSelectionViewModel
         {
-            return (int)(1000 / interval.TotalMilliseconds);
+            get => _cameraSelectionViewModel;
+            set
+            {
+                _cameraSelectionViewModel = value;
+                OnPropertyChanged();
+            }
         }
 
-        public ICommand CaptureFrameCommand => new RelayCommand(async () => await CaptureFrameAsync());
+        public bool IsCapturing
+        {
+            get => _isCapturing;
+            set
+            {
+                _isCapturing = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public ICommand StartCaptureCommand => new RelayCommand(StartCapture);
+        public ICommand StopCaptureCommand => new RelayCommand(StopCapture);
+
+        private void StartCapture()
+        {
+            CameraSelectionViewModel.StartCamera();
+            _timer.Start();
+            IsCapturing = true;
+        }
+
+        private void StopCapture()
+        {
+            CameraSelectionViewModel.StopCamera();
+            _timer.Stop();
+            IsCapturing = false;
+        }
 
         private async Task CaptureFrameAsync()
         {
-            byte[] frameData = _cameraCapture.CaptureFrame();
-            _frameProcessingService.ProcessFrame(frameData);
+            if (!IsCapturing) return;
+
+            byte[] frameData = CameraSelectionViewModel.CaptureFrame();
+            if (frameData != null)
+            {
+                _frameProcessingService.ProcessFrame(frameData);
+            }
         }
 
         private void OnFrameProcessed(byte[] frameData, FaceDetectionResult result)
         {
             var bitmapImage = ConvertByteArrayToBitmapImage(frameData);
-
             var annotatedFrame = DrawFacialLandmarks(bitmapImage, result);
-
             CurrentFrame = annotatedFrame;
 
             _currentSubBlockFrames.Add(result);
@@ -86,21 +119,15 @@ namespace AttentionDetectionApp.ViewModels
                 );
 
                 SubBlocks.Add(subBlock);
-
                 _currentSubBlockFrames.Clear();
             }
 
             if (SubBlocks.Count >= blockSize)
             {
-                CurrentBlock = new Block(
-                    SubBlocks.ToList(),
-                    _attentionAnalysisService.AnalyzeBlock(SubBlocks.ToList())
-                );
-
+                CurrentBlock = new Block(SubBlocks.ToList(), _attentionAnalysisService.AnalyzeBlock(SubBlocks.ToList()));
                 SubBlocks.Clear();
             }
         }
-
 
         private WriteableBitmap DrawFacialLandmarks(BitmapImage image, FaceDetectionResult result)
         {
@@ -150,7 +177,7 @@ namespace AttentionDetectionApp.ViewModels
             }
         }
 
-        public ObservableCollection<SubBlock> SubBlocks 
+        public ObservableCollection<SubBlock> SubBlocks
         {
             get => _subBlocks;
             set
@@ -196,6 +223,11 @@ namespace AttentionDetectionApp.ViewModels
                 image.EndInit();
                 return image;
             }
+        }
+
+        private int CalculateFrameRate(TimeSpan interval)
+        {
+            return (int)(1000 / interval.TotalMilliseconds);
         }
     }
 }
