@@ -1,5 +1,6 @@
 ﻿using AForge.Video.DirectShow;
 using AttentionDetectionApp.Utils;
+using MahApps.Metro.Controls;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -21,21 +22,13 @@ namespace AttentionDetectionApp.ViewModels
         public ObservableCollection<string> AvailableCameras
         {
             get => _availableCameras;
-            set
-            {
-                _availableCameras = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _availableCameras, value);
         }
 
         public string SelectedCamera
         {
             get => _selectedCamera;
-            set
-            {
-                _selectedCamera = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _selectedCamera, value);
         }
 
         public void StartCamera()

@@ -38,41 +38,25 @@ namespace AttentionDetectionApp.ViewModels
         public ObservableCollection<FaceDetectionResult> FaceDetectionResults
         {
             get => _faceDetectionResults;
-            set
-            {
-                _faceDetectionResults = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _faceDetectionResults, value);
         }
 
         public ObservableCollection<SubBlock> SubBlocks
         {
             get => _subBlocks;
-            set
-            {
-                _subBlocks = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _subBlocks, value);
         }
 
         public Block CurrentBlock
         {
             get => _currentBlock;
-            set
-            {
-                _currentBlock = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _currentBlock, value);
         }
 
         public BitmapSource CurrentFrame
         {
             get => _currentFrame;
-            set
-            {
-                _currentFrame = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _currentFrame, value);
         }
 
         public async Task CaptureFrameAsync(byte[] frameData)

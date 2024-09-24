@@ -30,31 +30,19 @@ namespace AttentionDetectionApp.ViewModels
         public CameraSelectionViewModel CameraSelectionViewModel
         {
             get => _cameraSelectionViewModel;
-            set
-            {
-                _cameraSelectionViewModel = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _cameraSelectionViewModel, value);
         }
 
         public FrameProcessingViewModel FrameProcessingViewModel
         {
             get => _frameProcessingViewModel;
-            set
-            {
-                _frameProcessingViewModel = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _frameProcessingViewModel, value);
         }
 
         public bool IsCapturing
         {
             get => _isCapturing;
-            set
-            {
-                _isCapturing = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _isCapturing, value);
         }
 
         public ICommand StartCaptureCommand => new RelayCommand(StartCapture);
