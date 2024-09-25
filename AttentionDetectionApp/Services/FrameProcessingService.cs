@@ -8,7 +8,7 @@ namespace AttentionDetectionApp.Services
     public class FrameProcessingService : IFrameProcessingService
     {
         private readonly IFaceDetectionService _faceDetectionService;
-        private readonly List<FrameSubStatus> _frameSubStatuses;
+        private readonly List<FrameStatus> _frameSubStatuses;
         private readonly List<SubBlock> _subBlocks;
         private int _framesPerSubBlock;
         private const int SubBlocksPerBlock = 5;
@@ -22,13 +22,12 @@ namespace AttentionDetectionApp.Services
         {
             _faceDetectionService = faceDetectionService;
             _framesPerSubBlock = framesPerSecond;
-            _frameSubStatuses = new List<FrameSubStatus>(_framesPerSubBlock);
+            _frameSubStatuses = new List<FrameStatus>(_framesPerSubBlock);
             _subBlocks = new List<SubBlock>(SubBlocksPerBlock);
         }
 
         public async Task ProcessFramesAsync(List<byte[]> frameDataList)
         {
-            // Використовуємо Parallel.ForEach для паралельної обробки кадрів
             await Task.Run(() =>
             {
                 Parallel.ForEach(frameDataList, frameData =>
@@ -58,7 +57,7 @@ namespace AttentionDetectionApp.Services
                     AttentionAnalysisService analysisService = new AttentionAnalysisService();
                     var subBlockStatus = analysisService.AnalyzeSubBlock(_frameSubStatuses);
 
-                    SubBlock subBlock = new SubBlock(new List<FrameSubStatus>(_frameSubStatuses), subBlockStatus);
+                    SubBlock subBlock = new SubBlock(new List<FrameStatus>(_frameSubStatuses), subBlockStatus);
                     _subBlocks.Add(subBlock);
 
                     _currentSubBlockIndex++;
@@ -76,23 +75,30 @@ namespace AttentionDetectionApp.Services
             }
         }
 
-        public FrameSubStatus DetermineFrameSubStatus(FaceDetectionResult result)
+        public FrameStatus DetermineFrameSubStatus(FaceDetectionResult result)
         {
+            if (!result.IsFaceDetected || result.LandmarkPoints == null || result.LandmarkPoints.Count == 0)
+            {
+                return FrameStatus.FaceNotDetected;
+            }
+
+            if (result.HeadRotationAngleYaw > 0.66)
+            {
+                return FrameStatus.HeadTurnedRight;
+            }
+
+            if (result.HeadRotationAngleYaw < -0.66)
+            {
+                return FrameStatus.HeadTurnedLeft;
+            }
+
             if (result.LeftEyeOpenProbability < 0.1 && result.RightEyeOpenProbability < 0.1)
             {
-                return FrameSubStatus.ClosedEyes;
+                return FrameStatus.ClosedEyes;
             }
 
-            if (result.HeadRotationAngleYaw > 20)
-            {
-                return FrameSubStatus.HeadTurnedRight;
-            }
-            if (result.HeadRotationAngleYaw < -20)
-            {
-                return FrameSubStatus.HeadTurnedLeft;
-            }
-
-            return FrameSubStatus.OpenEyes;
+            return FrameStatus.OpenEyes;
         }
+
     }
 }

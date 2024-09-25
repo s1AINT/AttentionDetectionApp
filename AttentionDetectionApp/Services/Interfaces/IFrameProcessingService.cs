@@ -8,6 +8,6 @@ namespace AttentionDetectionApp.Services.Interfaces
     {
         event Action<byte[], FaceDetectionResult> FrameProcessed;
         void ProcessFrame(byte[] frameData); 
-        FrameSubStatus DetermineFrameSubStatus(FaceDetectionResult result);
+        FrameStatus DetermineFrameSubStatus(FaceDetectionResult result);
     }
 }

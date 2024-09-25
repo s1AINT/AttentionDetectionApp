@@ -34,7 +34,7 @@ namespace AttentionDetectionApp.Services
                     var face = faces[0];
                     var shape = _shapePredictor.Detect(img, face);
 
-                    // Викликаємо функцію для кожного ока
+
                     var leftEyeOpenProbability = CalculateEyeOpenProbability(shape, 37, 41); // Ліве око
                     var rightEyeOpenProbability = CalculateEyeOpenProbability(shape, 43, 47); // Праве око
 
@@ -42,7 +42,7 @@ namespace AttentionDetectionApp.Services
                     var headRotationPitch = CalculateHeadPitch(shape);
                     var headRotationRoll = CalculateHeadRoll(shape);
 
-                    // Get all landmark points as a dictionary
+
                     var landmarkPoints = GetFacialLandmarkPoints(shape);
 
                     return new FaceDetectionResult
@@ -65,11 +65,10 @@ namespace AttentionDetectionApp.Services
         {
             var points = new Dictionary<int, DlibDotNet.Point>();
 
-            // Iterate through all 68 landmarks
             for (int i = 0; i < shape.Parts; i++)
             {
                 var point = shape.GetPart((uint)i);
-                points.Add(i, point);  // Add each point with its index
+                points.Add(i, point); 
             }
 
             return points;
@@ -101,16 +100,13 @@ namespace AttentionDetectionApp.Services
 
         private double CalculateEyeOpenProbability(FullObjectDetection shape, int eyeTopIndex, int eyeBottomIndex)
         {
-            // Отримуємо точки ока
-            var topPoint = shape.GetPart((uint)eyeTopIndex); // Верхня точка ока
-            var bottomPoint = shape.GetPart((uint)eyeBottomIndex); // Нижня точка ока
+            var topPoint = shape.GetPart((uint)eyeTopIndex); 
+            var bottomPoint = shape.GetPart((uint)eyeBottomIndex); 
 
-            // Вимірюємо вертикальну відстань
             double eyeHeight = CalculateEuclideanDistance(topPoint, bottomPoint);
 
-            // Налаштуй поріг, щоб визначити, чи очі відкриті
-            double threshold = 10.0; // Можливо, потрібно налаштувати залежно від даних
-            return eyeHeight < threshold ? 0.0 : 1.0; // 0.0 - закриті, 1.0 - відкриті
+            double threshold = 10.0; 
+            return eyeHeight < threshold ? 0.0 : 1.0; 
         }
 
 

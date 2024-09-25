@@ -25,25 +25,31 @@ namespace AttentionDetectionApp.Services
             return pattern.DetermineBlockStatus(subBlockStatuses);
         }
 
-        public SubBlockStatus AnalyzeSubBlock(List<FrameSubStatus> frameSubStatuses)
+        public SubBlockStatus AnalyzeSubBlock(List<FrameStatus> frameSubStatuses)
         {
-            if (frameSubStatuses.TrueForAll(status => status == FrameSubStatus.ClosedEyes))
+            if (frameSubStatuses.TrueForAll(status => status == FrameStatus.FaceNotDetected))
+            {
+                return SubBlockStatus.PersonNotFound;
+            }
+
+            if (frameSubStatuses.TrueForAll(status => status == FrameStatus.ClosedEyes))
             {
                 return SubBlockStatus.Sleeping;
             }
 
-            if (frameSubStatuses.Exists(status => status == FrameSubStatus.HeadTurnedLeft || status == FrameSubStatus.HeadTurnedRight))
+            if (frameSubStatuses.TrueForAll(status => status == FrameStatus.HeadTurnedLeft || status == FrameStatus.HeadTurnedRight))
             {
                 return SubBlockStatus.HeadTurned;
             }
 
-            if (frameSubStatuses.Exists(status => status == FrameSubStatus.OpenEyes) &&
-                frameSubStatuses.Exists(status => status == FrameSubStatus.ClosedEyes))
+            if (frameSubStatuses.Exists(status => status == FrameStatus.OpenEyes) &&
+                frameSubStatuses.Exists(status => status == FrameStatus.ClosedEyes))
             {
                 return SubBlockStatus.Blinked;
             }
 
             return SubBlockStatus.OpenEyes;
         }
+
     }
 }

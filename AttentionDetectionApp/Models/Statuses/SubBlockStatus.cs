@@ -7,6 +7,7 @@ namespace AttentionDetectionApp.Models.Statuses
         Blinked,
         Sleeping,
         OpenEyes,
-        HeadTurned
+        HeadTurned,
+        PersonNotFound
     }
 }

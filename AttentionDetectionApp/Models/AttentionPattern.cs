@@ -13,7 +13,7 @@ namespace AttentionDetectionApp.Models
                 return BlockStatus.Sleepy;
             }
 
-            if (subBlockStatuses.Exists(status => status == SubBlockStatus.HeadTurned))
+            if (subBlockStatuses.TrueForAll(status => status == SubBlockStatus.HeadTurned))
             {
                 return BlockStatus.Distracted;
             }

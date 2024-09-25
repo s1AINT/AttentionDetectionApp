@@ -2,12 +2,13 @@
 
 namespace AttentionDetectionApp.Models.Statuses
 {
-    public enum FrameSubStatus
+    public enum FrameStatus
     {
         OpenEyes,
         ClosedEyes,
         HeadTurnedLeft,
         HeadTurnedRight,
-        HeadStraight
+        HeadStraight,
+        FaceNotDetected 
     }
 }

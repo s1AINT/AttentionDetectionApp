@@ -1,8 +1,4 @@
-﻿using System.ComponentModel;
-using System.Reactive;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using System.Windows.Threading;
 using AttentionDetectionApp.Services.Interfaces;
 using AttentionDetectionApp.Utils;
@@ -19,7 +15,7 @@ namespace AttentionDetectionApp.ViewModels
 
         public MainViewModel(IFrameProcessingService frameProcessingService = null, IAttentionAnalysisService attentionAnalysisService = null)
         {
-            _timerInterval = 100;
+            _timerInterval = 200;
             _cameraSelectionViewModel = new CameraSelectionViewModel();
             _frameProcessingViewModel = new FrameProcessingViewModel(frameProcessingService, attentionAnalysisService, CalculateFrameRate(TimeSpan.FromMilliseconds(_timerInterval)), 5);
 

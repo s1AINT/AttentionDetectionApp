@@ -71,7 +71,7 @@ namespace AttentionDetectionApp.ViewModels
         {
             var bitmapImage = ConvertByteArrayToBitmapImage(frameData);
             var annotatedFrame = DrawFacialLandmarks(bitmapImage, result);
-            CurrentFrame = annotatedFrame;
+            CurrentFrame = annotatedFrame; 
 
             _currentSubBlockFrames.Add(result);
 
